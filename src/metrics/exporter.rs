@@ -52,10 +52,16 @@ pub struct Metrics {
     pub epoch_block_rewards: Family<MethodLabels, Gauge>,
     pub ms_to_next_slot: Family<MethodLabels, Gauge>,
     pub last_block_rewards: Family<MethodLabels, Gauge>,
+    pub voting_status: Family<MethodLabels, Gauge>,
 }
 
 impl Metrics {
-    pub fn new(network: String, rpc_url: String, identity_account: String, vote_account: String) -> Metrics {
+    pub fn new(
+        network: String,
+        rpc_url: String,
+        identity_account: String,
+        vote_account: String,
+    ) -> Metrics {
         Metrics {
             network,
             rpc_url,
@@ -74,12 +80,13 @@ impl Metrics {
             epoch_block_rewards: Family::default(),
             ms_to_next_slot: Family::default(),
             last_block_rewards: Family::default(),
+            voting_status: Family::default(),
         }
     }
 
     pub async fn init_registry(&self, shared_state: Arc<Mutex<AppState>>) {
         let mut state = shared_state.lock().await;
-        
+
         state
             .registry
             .register("solana_slot", "Slot of cluster", self.slot.clone());
@@ -145,6 +152,12 @@ impl Metrics {
             "Average of last non-zero block rewards",
             self.last_block_rewards.clone(),
         );
+
+        state.registry.register(
+            "solana_voting_status",
+            "Validator voting status (-1=not found from the RPC response, 0=delinquent, 1=voting normally)",
+            self.voting_status.clone(),
+        );
     }
 
     pub fn run_loop(self: Arc<Self>) -> tokio::task::JoinHandle<()> {
@@ -156,8 +169,9 @@ impl Metrics {
             );
 
             // Create a channel for communicating current slot, epoch, and leader slots to background task
-            let (slot_tx, mut slot_rx) = tokio::sync::mpsc::unbounded_channel::<(u64, u64, Vec<u64>)>();
-            
+            let (slot_tx, mut slot_rx) =
+                tokio::sync::mpsc::unbounded_channel::<(u64, u64, Vec<u64>)>();
+
             // Spawn background task for block rewards fetching
             let mut bg_client = solana::validator::SolanaClient::new(
                 &self.rpc_url,
@@ -168,10 +182,13 @@ impl Metrics {
             tokio::spawn(async move {
                 while let Some((current_slot, current_epoch, leader_slots)) = slot_rx.recv().await {
                     if !leader_slots.is_empty() {
-                        match bg_client.get_block_rewards_sum(current_slot, current_epoch, leader_slots).await {
+                        match bg_client
+                            .get_block_rewards_sum(current_slot, current_epoch, leader_slots)
+                            .await
+                        {
                             Ok(block_rewards) => {
                                 bg_self.set_epoch_block_rewards(block_rewards);
-                                
+
                                 match bg_client.get_last_block_rewards().await {
                                     Ok(last_rewards) => {
                                         bg_self.set_last_block_rewards(last_rewards);
@@ -330,6 +347,18 @@ impl Metrics {
 
                 if let Some(usd_price) = usd_price {
                     self.set_usd_price(usd_price);
+                }
+
+                let voting_status = match client.get_voting_status().await {
+                    Ok(status) => Some(status),
+                    Err(e) => {
+                        error!("Error fetching voting status: {}", e);
+                        None
+                    }
+                };
+
+                if let Some(voting_status) = voting_status {
+                    self.set_voting_status(voting_status);
                 }
 
                 // Sleep between metric updates
@@ -519,6 +548,15 @@ impl Metrics {
                 vote_account: self.vote_account.clone(),
             })
             .set(last_block_rewards);
+    }
+
+    pub fn set_voting_status(&self, status: i64) {
+        self.voting_status
+            .get_or_create(&MethodLabels {
+                network: self.network.clone(),
+                vote_account: self.vote_account.clone(),
+            })
+            .set(status);
     }
 }
 
