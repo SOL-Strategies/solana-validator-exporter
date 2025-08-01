@@ -238,6 +238,9 @@ impl Metrics {
 
                     let _ = slot_tx.send((slot.unwrap_or(0), epoch as u64, leader_slots.clone()));
 
+                    // Update solana_blocks{block_type="scheduled"}
+                    self.set_block_scheduled(leader_slots.len() as u64);
+
                     let next_slot_ms = match client
                         .get_ms_to_next_slot(slot.unwrap_or(0), leader_slots)
                         .await
@@ -439,6 +442,16 @@ impl Metrics {
                 vote_account: self.vote_account.clone(),
             })
             .set(balance as i64);
+    }
+
+    pub fn set_block_scheduled(&self, scheduled: u64) {
+        self.blocks
+            .get_or_create(&BlockLabels {
+                network: self.network.clone(),
+                block_type: "scheduled".to_string(),
+                vote_account: self.vote_account.clone(),
+            })
+            .set(scheduled as i64);
     }
 
     pub fn set_block_production(&self, total: u64, produced: u64, skipped: u64) {
