@@ -1,19 +1,38 @@
-# Global configuration
+# Example configuration demonstrating multiple networks and custom labels.
 port: 9090
 
-# RPC URLs for different networks (at least one required)
-rpc_url_mainnet: "https://api.mainnet-beta.solana.com"
-#rpc_url_testnet: "https://api.testnet.solana.com"  # Optional
-# rpc_url_devnet: "https://api.devnet.solana.com"  # Optional
+networks:
+  solana_mainnet:
+    rpc_url: "https://api.mainnet-beta.solana.com"
+    # Optional timing settings, all in wall-clock seconds. They are converted to
+    # slots at runtime with the slot time measured from the RPC node
+    # (solana_slot_time_ms), so they keep their meaning when slot times change.
+    delinquency_seconds: 60        # last vote older than this => delinquent (floor: 32 slots)
+    reward_window_seconds: 900     # sliding window for solana_epoch_credits_rate_ratio / _rate_percentile / solana_leader_slots_in_window (minimum 60)
+    recent_window_seconds: 600     # lookback for fetching block rewards of leader slots
+    validators:
+      - vote_address: "YOUR_MAINNET_VOTE_ACCOUNT_PUBKEY"
+        identity_address: "YOUR_MAINNET_IDENTITY_ACCOUNT_PUBKEY"
+        # optional and it overrides the network-level labels
+        labels:
+          description: "SOME_DETAILS_FOR_THIS_VALIDATOR"
+      # - vote_address: "OPTIONAL_SECOND_MAINNET_VOTE_ACCOUNT"
+      #   identity_address: "OPTIONAL_SECOND_MAINNET_IDENTITY_ACCOUNT"
+    labels:
+      stage: mainnet
+      environment: production
 
-# Validator accounts for mainnet (at least one validator configuration required)
-mainnet_vote_account: "YOUR_MAINNET_VOTE_ACCOUNT_PUBKEY"
-mainnet_identity_account: "YOUR_MAINNET_IDENTITY_ACCOUNT_PUBKEY"
+  solana_testnet:
+    rpc_url: "https://api.testnet.solana.com"
+    validators:
+      - vote_address: "YOUR_TESTNET_VOTE_ACCOUNT_PUBKEY"
+        identity_address: "YOUR_TESTNET_IDENTITY_ACCOUNT_PUBKEY"
+    # labels: {}
 
-# Optional: Additional validators for other networks
-testnet_vote_account: "YOUR_TESTNET_VOTE_ACCOUNT_PUBKEY"
-testnet_identity_account: "YOUR_TESTNET_IDENTITY_ACCOUNT_PUBKEY"
-
-# Optional: Additional validators for other networks
-devnet_vote_account: "YOUR_DEVNET_VOTE_ACCOUNT_PUBKEY"
-devnet_identity_account: "YOUR_DEVNET_IDENTITY_ACCOUNT_PUBKEY"
+  # solana_devnet:
+  #   rpc_url: "https://api.devnet.solana.com"
+  #   validators:
+  #     - vote_address: "YOUR_DEVNET_VOTE_ACCOUNT_PUBKEY"
+  #       identity_address: "YOUR_DEVNET_IDENTITY_ACCOUNT_PUBKEY"
+  #   labels:
+  #     stage: devnet

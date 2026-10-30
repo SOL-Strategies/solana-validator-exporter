@@ -5,8 +5,9 @@ use axum::Router;
 use clap::Parser;
 use env_logger::Env;
 use log::info;
-use metrics::exporter::metrics_handler;
+use metrics::exporter::{metrics_handler, CollectorSettings};
 use serde::Deserialize;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::sync::Arc;
@@ -23,28 +24,73 @@ struct CliArgs {
 
 #[derive(Debug, Deserialize)]
 struct Config {
-    port: i32,
-    // Network RPC URLs
-    rpc_url_mainnet: Option<String>,
-    rpc_url_testnet: Option<String>,
-    rpc_url_devnet: Option<String>,
-    // Mainnet validator accounts
-    mainnet_vote_account: Option<String>,
-    mainnet_identity_account: Option<String>,
-    // Testnet validator accounts
-    testnet_vote_account: Option<String>,
-    testnet_identity_account: Option<String>,
-    // Devnet validator accounts
-    devnet_vote_account: Option<String>,
-    devnet_identity_account: Option<String>,
+    port: u16,
+    networks: BTreeMap<String, NetworkConfig>,
+}
+
+/// Wall-clock window after which a validator whose last vote is older than this
+/// is reported as delinquent. Converted to slots with the measured slot time.
+const DEFAULT_DELINQUENCY_SECONDS: u64 = 60;
+/// Sliding window over which `solana_epoch_credits_rate_ratio` is computed.
+const DEFAULT_REWARD_WINDOW_SECONDS: u64 = 900;
+/// Lookback window for fetching block rewards of recent leader slots.
+const DEFAULT_RECENT_WINDOW_SECONDS: u64 = 600;
+
+fn default_delinquency_seconds() -> u64 {
+    DEFAULT_DELINQUENCY_SECONDS
+}
+
+fn default_reward_window_seconds() -> u64 {
+    DEFAULT_REWARD_WINDOW_SECONDS
+}
+
+fn default_recent_window_seconds() -> u64 {
+    DEFAULT_RECENT_WINDOW_SECONDS
+}
+
+fn validate_reward_window_seconds(
+    network_name: &str,
+    reward_window_seconds: u64,
+) -> Result<(), String> {
+    if reward_window_seconds < solana::vote_accounts::MIN_RATE_WINDOW_SECONDS {
+        return Err(format!(
+            "network `{network_name}`: reward_window_seconds must be at least {}",
+            solana::vote_accounts::MIN_RATE_WINDOW_SECONDS
+        ));
+    }
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct NetworkConfig {
+    rpc_url: String,
+    validators: Vec<NetworkValidator>,
+    #[serde(default)]
+    labels: BTreeMap<String, String>,
+    #[serde(default = "default_delinquency_seconds")]
+    delinquency_seconds: u64,
+    #[serde(default = "default_reward_window_seconds")]
+    reward_window_seconds: u64,
+    #[serde(default = "default_recent_window_seconds")]
+    recent_window_seconds: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct NetworkValidator {
+    vote_address: String,
+    identity_address: String,
+    #[serde(default)]
+    labels: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone)]
 struct ValidatorConfig {
-    network: String,
+    network_key: String,
     rpc_url: String,
     vote_account: String,
     identity_account: String,
+    labels: BTreeMap<String, String>,
+    settings: CollectorSettings,
 }
 
 #[tokio::main]
@@ -60,75 +106,86 @@ async fn main() {
     // Validate configuration and build validator configs
     let mut validator_configs = Vec::new();
 
-    // Check mainnet configuration
-    if let (Some(rpc_url), Some(vote_account), Some(identity_account)) = (
-        &config.rpc_url_mainnet,
-        &config.mainnet_vote_account,
-        &config.mainnet_identity_account,
-    ) {
-        validator_configs.push(ValidatorConfig {
-            network: "mainnet".to_string(),
-            rpc_url: rpc_url.clone(),
-            vote_account: vote_account.clone(),
-            identity_account: identity_account.clone(),
-        });
+    if config.networks.is_empty() {
+        panic!("At least one network must be provided under the `networks` configuration section");
     }
 
-    // Check testnet configuration
-    if let (Some(rpc_url), Some(vote_account), Some(identity_account)) = (
-        &config.rpc_url_testnet,
-        &config.testnet_vote_account,
-        &config.testnet_identity_account,
-    ) {
-        validator_configs.push(ValidatorConfig {
-            network: "testnet".to_string(),
-            rpc_url: rpc_url.clone(),
-            vote_account: vote_account.clone(),
-            identity_account: identity_account.clone(),
-        });
-    }
+    for (network_name, network_config) in &config.networks {
+        validate_reward_window_seconds(network_name, network_config.reward_window_seconds)
+            .unwrap_or_else(|error| panic!("{error}"));
 
-    // Check devnet configuration
-    if let (Some(rpc_url), Some(vote_account), Some(identity_account)) = (
-        &config.rpc_url_devnet,
-        &config.devnet_vote_account,
-        &config.devnet_identity_account,
-    ) {
-        validator_configs.push(ValidatorConfig {
-            network: "devnet".to_string(),
-            rpc_url: rpc_url.clone(),
-            vote_account: vote_account.clone(),
-            identity_account: identity_account.clone(),
-        });
+        for validator in &network_config.validators {
+            let mut labels: BTreeMap<String, String> = network_config
+                .labels
+                .iter()
+                .map(|(key, value)| (key.clone(), value.clone()))
+                .collect();
+
+            labels
+                .entry("network".to_string())
+                .or_insert(network_name.clone());
+            labels.insert("vote_account".to_string(), validator.vote_address.clone());
+
+            // Iterate validator.labels and insert into labels, overriding any existing keys
+            labels.extend(validator.labels.clone());
+
+            validator_configs.push(ValidatorConfig {
+                network_key: network_name.clone(),
+                rpc_url: network_config.rpc_url.clone(),
+                vote_account: validator.vote_address.clone(),
+                identity_account: validator.identity_address.clone(),
+                labels,
+                settings: CollectorSettings {
+                    delinquency_seconds: network_config.delinquency_seconds,
+                    reward_window_seconds: network_config.reward_window_seconds,
+                    recent_window_seconds: network_config.recent_window_seconds,
+                },
+            });
+        }
     }
 
     if validator_configs.is_empty() {
-        panic!("At least one complete validator configuration (RPC URL, vote account, and identity account) must be provided");
+        panic!("At least one validator must be configured under `networks`");
     }
 
-    info!("Starting exporter with {} validator(s)!", validator_configs.len());
-    
+    info!(
+        "Starting exporter with {} validator(s)!",
+        validator_configs.len()
+    );
+
     // Create shared metrics registry
     let shared_state = Arc::new(Mutex::new(metrics::exporter::AppState {
         registry: prometheus_client::registry::Registry::default(),
     }));
-    
+
     // Create and start metrics collection for each validator
     let mut handles = Vec::new();
     for validator_config in validator_configs {
-        info!("Starting metrics collection for {} validator: {}", 
-              validator_config.network, validator_config.vote_account);
-        
+        let ValidatorConfig {
+            network_key,
+            rpc_url,
+            vote_account,
+            identity_account,
+            labels,
+            settings,
+        } = validator_config;
+
+        info!(
+            "Starting metrics collection for network `{}` validator: {}",
+            &network_key, &vote_account
+        );
+
         let metrics = Arc::new(metrics::exporter::Metrics::new(
-            validator_config.network,
-            validator_config.rpc_url,
-            validator_config.identity_account,
-            validator_config.vote_account,
+            rpc_url,
+            identity_account,
+            vote_account,
+            labels,
+            settings,
         ));
-        
+
         // Initialize metrics in shared registry
         metrics.init_registry(shared_state.clone()).await;
-        
+
         // Start metrics collection loop
         let handle = metrics.clone().run_loop();
         handles.push(handle);
@@ -137,10 +194,63 @@ async fn main() {
     let router = Router::new()
         .route("/metrics", get(metrics_handler))
         .with_state(shared_state.clone());
-    
+
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port))
         .await
         .unwrap();
 
     axum::serve(listener, router).await.unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_network_keys_are_optional_with_defaults() {
+        let yaml = r#"
+port: 9099
+networks:
+  solana_mainnet:
+    rpc_url: "https://api.mainnet-beta.solana.com"
+    validators:
+      - vote_address: "vote"
+        identity_address: "identity"
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        let network = &config.networks["solana_mainnet"];
+        assert_eq!(network.delinquency_seconds, 60);
+        assert_eq!(network.reward_window_seconds, 900);
+        assert_eq!(network.recent_window_seconds, 600);
+    }
+
+    #[test]
+    fn new_network_keys_are_read() {
+        let yaml = r#"
+port: 9099
+networks:
+  solana_mainnet:
+    rpc_url: "https://api.mainnet-beta.solana.com"
+    delinquency_seconds: 45
+    reward_window_seconds: 1200
+    recent_window_seconds: 300
+    validators:
+      - vote_address: "vote"
+        identity_address: "identity"
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        let network = &config.networks["solana_mainnet"];
+        assert_eq!(network.delinquency_seconds, 45);
+        assert_eq!(network.reward_window_seconds, 1200);
+        assert_eq!(network.recent_window_seconds, 300);
+    }
+
+    #[test]
+    fn reward_window_must_cover_the_minimum_rate_span() {
+        assert!(validate_reward_window_seconds("mainnet", 60).is_ok());
+        assert_eq!(
+            validate_reward_window_seconds("mainnet", 59),
+            Err("network `mainnet`: reward_window_seconds must be at least 60".to_string())
+        );
+    }
 }

@@ -1,0 +1,97 @@
+{
+  "current": [
+    {
+      "votePubkey": "Ours11111111111111111111111111111111111111111",
+      "nodePubkey": "OursIdentity11111111111111111111111111111111",
+      "activatedStake": 100000,
+      "commission": 5,
+      "epochVoteAccount": true,
+      "epochCredits": [
+        [1068, 1800, 900],
+        [1069, 2800, 1800],
+        [1070, 3800, 2800]
+      ],
+      "lastVote": 462000497,
+      "rootSlot": 462000465
+    },
+    {
+      "votePubkey": "Big11111111111111111111111111111111111111111",
+      "nodePubkey": "BigIdentity111111111111111111111111111111111",
+      "activatedStake": 500000,
+      "commission": 0,
+      "epochVoteAccount": true,
+      "epochCredits": [
+        [1069, 10000, 5000],
+        [1070, 15500, 10000]
+      ],
+      "lastVote": 462000498,
+      "rootSlot": 462000466
+    },
+    {
+      "votePubkey": "Small111111111111111111111111111111111111111",
+      "nodePubkey": "SmallIdentity1111111111111111111111111111111",
+      "activatedStake": 20000,
+      "commission": 10,
+      "epochVoteAccount": true,
+      "epochCredits": [
+        [1070, 240, 0]
+      ],
+      "lastVote": 462000499,
+      "rootSlot": 462000467
+    },
+    {
+      "votePubkey": "Slow1111111111111111111111111111111111111111",
+      "nodePubkey": "SlowIdentity11111111111111111111111111111111",
+      "activatedStake": 100000,
+      "commission": 10,
+      "epochVoteAccount": true,
+      "epochCredits": [
+        [1069, 1000, 0],
+        [1070, 1400, 1000]
+      ],
+      "lastVote": 462000490,
+      "rootSlot": 462000458
+    },
+    {
+      "votePubkey": "Zero1111111111111111111111111111111111111111",
+      "nodePubkey": "ZeroIdentity11111111111111111111111111111111",
+      "activatedStake": 0,
+      "commission": 100,
+      "epochVoteAccount": false,
+      "epochCredits": [
+        [1070, 10, 0]
+      ],
+      "lastVote": 462000499,
+      "rootSlot": 462000467
+    }
+  ],
+  "delinquent": [
+    {
+      "votePubkey": "Stale1111111111111111111111111111111111111111",
+      "nodePubkey": "StaleIdentity1111111111111111111111111111111",
+      "activatedStake": 50000,
+      "commission": 10,
+      "epochVoteAccount": true,
+      "epochCredits": [
+        [1068, 600, 0],
+        [1069, 1200, 600]
+      ],
+      "lastVote": 461900000,
+      "rootSlot": 461899968
+    },
+    {
+      "votePubkey": "Marker11111111111111111111111111111111111111",
+      "nodePubkey": "MarkerIdentity111111111111111111111111111111",
+      "activatedStake": 0,
+      "commission": 10,
+      "epochVoteAccount": false,
+      "epochCredits": [
+        [1069, 1000, 0],
+        [1070, 1500, 1000],
+        [18446744073709551615, 18446744073709551615, 18446744073709551615]
+      ],
+      "lastVote": 462000400,
+      "rootSlot": 462000368
+    }
+  ]
+}

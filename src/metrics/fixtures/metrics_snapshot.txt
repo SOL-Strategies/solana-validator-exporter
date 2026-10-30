@@ -1,0 +1,88 @@
+# HELP solana_slot Slot of cluster.
+# TYPE solana_slot gauge
+solana_slot{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 462000500
+# HELP solana_epoch Current epoch.
+# TYPE solana_epoch gauge
+solana_epoch{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 1070
+# HELP solana_epoch_progress Epoch progress.
+# TYPE solana_epoch_progress gauge
+solana_epoch_progress{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 1234
+# HELP solana_stake Stake info.
+# TYPE solana_stake gauge
+solana_stake{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",stake_type="activated"} 100000
+solana_stake{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",stake_type="activated_accounts"} 4
+solana_stake{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",stake_type="activating"} 10
+solana_stake{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",stake_type="activating_accounts"} 1
+solana_stake{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",stake_type="deactivating"} 20
+solana_stake{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",stake_type="deactivating_accounts"} 2
+solana_stake{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",stake_type="locked"} 30
+# HELP solana_identity_balance Identity balance.
+# TYPE solana_identity_balance gauge
+solana_identity_balance{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 5000000000
+# HELP solana_vote_account_balance Vote account balance.
+# TYPE solana_vote_account_balance gauge
+solana_vote_account_balance{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 2000000000
+# HELP solana_blocks Block production. 0 scheduled slots with non-zero activated stake means the validator was not admitted to the epoch's leader schedule (VAT or missing BLS pubkey).
+# TYPE solana_blocks gauge
+solana_blocks{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",block_type="produced"} 9
+solana_blocks{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",block_type="scheduled"} 12
+solana_blocks{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",block_type="skipped"} 1
+solana_blocks{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111",block_type="total"} 10
+# HELP solana_jito_tips Jito tips.
+# TYPE solana_jito_tips gauge
+solana_jito_tips{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 777
+# HELP solana_vote_credit_rank DEPRECATED since Alpenglow: epoch credits are reward lamports proportional to stake, so this ranks by stake. Use solana_epoch_credits_rate_ratio / solana_epoch_credits_percentile instead. Will be removed in the next release.
+# TYPE solana_vote_credit_rank gauge
+solana_vote_credit_rank{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 2
+# HELP solana_usd_price USD Price.
+# TYPE solana_usd_price gauge
+solana_usd_price{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 15012345
+# HELP solana_epoch_block_rewards Sum of block rewards this epoch.
+# TYPE solana_epoch_block_rewards gauge
+solana_epoch_block_rewards{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 123456
+# HELP solana_ms_to_next_slot Time to next leader slot.
+# TYPE solana_ms_to_next_slot gauge
+solana_ms_to_next_slot{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 4000
+# HELP solana_last_block_rewards Average of last non-zero block rewards.
+# TYPE solana_last_block_rewards gauge
+solana_last_block_rewards{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 11111
+# HELP solana_voting_status Validator voting status (-1=not found from the RPC response, 0=delinquent, 1=voting normally).
+# TYPE solana_voting_status gauge
+solana_voting_status{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 1
+# HELP solana_slot_time_ms Average slot time in milliseconds measured from recent performance samples; used for every slot/time conversion in this exporter.
+# TYPE solana_slot_time_ms gauge
+solana_slot_time_ms{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 200
+# HELP solana_vote_distance_slots Current slot minus the vote account's lastVote, from one getVoteAccounts/getSlot pair on the same RPC node.
+# TYPE solana_vote_distance_slots gauge
+solana_vote_distance_slots{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 3
+# HELP solana_root_distance_slots Current slot minus the vote account's rootSlot, from one getVoteAccounts/getSlot pair on the same RPC node.
+# TYPE solana_root_distance_slots gauge
+solana_root_distance_slots{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 35
+# HELP solana_epoch_credits Credits earned in the current epoch (reward lamports since Alpenglow); 0 if the account has no entry for the current epoch.
+# TYPE solana_epoch_credits gauge
+solana_epoch_credits{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 1000
+# HELP solana_epoch_credits_per_stake_ratio Epoch-to-date credits per activated stake divided by the cluster median over staked accounts with a current-epoch entry (1.0 = median).
+# TYPE solana_epoch_credits_per_stake_ratio gauge
+solana_epoch_credits_per_stake_ratio{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 0.95
+# HELP solana_epoch_credits_percentile Percentage (0-100) of staked vote accounts whose epoch-to-date credits per stake is strictly below ours; accounts without a current-epoch entry count as 0.
+# TYPE solana_epoch_credits_percentile gauge
+solana_epoch_credits_percentile{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 40.0
+# HELP solana_epoch_credits_rate_ratio Credits per stake earned over the last reward_window_seconds divided by the median of the same per-account quantity over accounts with no leader slot inside the window (1.0 = median; p10 of all accounts when fewer than 50 such accounts exist); our own leader slots inflate it for one window; absent until the window holds two snapshots at least 60 s apart.
+# TYPE solana_epoch_credits_rate_ratio gauge
+solana_epoch_credits_rate_ratio{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 1.25
+# HELP solana_epoch_credits_rate_percentile Percentage (0-100) of staked vote accounts whose credits per stake earned over the last reward_window_seconds is strictly below ours, among accounts that earned anything in the window; informational only: healthy validators cluster at the same rate, so values between ~10 and ~60 are noise.
+# TYPE solana_epoch_credits_rate_percentile gauge
+solana_epoch_credits_rate_percentile{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 60.0
+# HELP solana_leader_slots_in_window Number of our scheduled leader slots inside the reward_window_seconds window; leader rewards make solana_epoch_credits_rate_ratio spike above 1 when this is non-zero.
+# TYPE solana_leader_slots_in_window gauge
+solana_leader_slots_in_window{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 2
+# HELP solana_rate_reference_accounts Number of staked vote accounts that earned credits in the reward window and had no leader slot inside it: the reference population of solana_epoch_credits_rate_ratio; below 50 the ratio falls back to the 10th percentile of all accounts.
+# TYPE solana_rate_reference_accounts gauge
+solana_rate_reference_accounts{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 512
+# HELP solana_vote_account_epoch Epoch of the newest usable epochCredits entry; lags solana_epoch when the vote account or the RPC node is stale.
+# TYPE solana_vote_account_epoch gauge
+solana_vote_account_epoch{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 1070
+# HELP solana_bls_pubkey_registered 1 if the vote account state contains a BLS pubkey (required for admission to the Alpenglow validator set), else 0; polled once per epoch.
+# TYPE solana_bls_pubkey_registered gauge
+solana_bls_pubkey_registered{network="solana_mainnet",stage="mainnet",vote_account="Ours11111111111111111111111111111111111111111"} 1
+# EOF

@@ -5,7 +5,7 @@ COPY ../ /app
 RUN cargo build --release
 
 FROM debian:stable-slim AS release
-RUN apt-get update && apt-get upgrade -y && apt-get install ca-certificates -y
+RUN apt-get update && apt-get upgrade -y && apt-get install ca-certificates adduser -y
 RUN adduser --disabled-password --home /home/exporter --gecos "" exporter
 USER exporter
 COPY --from=builder /app/target/release/solana-validator-exporter /usr/local/bin
